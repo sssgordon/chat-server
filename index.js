@@ -31,11 +31,14 @@ app.get("/message", (req, res, next) => {
 
 app.post("/message", (req, res, next) => {
   const { message } = req.body; // REQUIRES body-parser to use the body
-  // gets rid of the body; messages='xxx' in request <- this becomes a property of the request body
+  // gets the message out of the body and gets rid of the body; messages='xxx' in request <- this becomes a property of the request body
+
+  const string = JSON.stringify(message); //ALWAYS send json strings over the stream
+  stream.send(string); // the function that sends data to the stream
 
   messages.push(message);
 
-  res.send(message);
+  res.send(message); // this is only for testing, the app woulnd't see this; this should always be put at the end, for legibility
 });
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
