@@ -22,6 +22,7 @@ const stream = new Sse(); // a stream is a list of clients; send data to the str
 const streams = {}; // for multiple streams / rooms; this is a dictionary
 
 app.get("/stream", (req, res, next) => {
+  // this endpoint connect to the stream
   const rooms = Object.keys(messages); // gives an object and returns an array of its keys (property names)
   // a new stream endpoint is how we get to the stream
   const string = JSON.stringify(rooms); // serialize the data is to turn the data into a series of characters (string) when we need to send data over the internet
@@ -30,11 +31,17 @@ app.get("/stream", (req, res, next) => {
   // to test, run: http :4000/stream --stream
 });
 
-app.get("/rooms/:roomName", (req, res, next) => {
-  const { roomName } = req.params;
-  const stream = streams[roomName];
+app.get("/streams/:roomName", (req, res, next) => {
+  // this endpoint connect to a stream of a room with the existing roomName
 
-  const data = messages[roomName];
+  // to test a stream, we need to get with --stream
+  const { roomName } = req.params;
+  //   console.log("roomName test", roomName);
+  //   console.log("streams test", streams);
+  const stream = streams[roomName];
+  //   console.log("stream test:", stream);
+
+  const data = messages[roomName]; // we can get a list of messages in this room stream
   const string = JSON.stringify(data);
   stream.updateInit(string);
   stream.init(req, res);
@@ -47,6 +54,7 @@ function send(data) {
 }
 
 app.post("/room", (req, res, next) => {
+  // this endpoint create rooms
   const { name } = req.body; // assuem someone will send us a name of a room
 
   send(name);
@@ -54,8 +62,7 @@ app.post("/room", (req, res, next) => {
   messages[name] = []; // object[name] -> this syntax is for dynamic property (existing properties need '')
   //here the room is an array that is the value of a property of the messages object
 
-  streams[name] = new Sse(); // creates a new stream (Sse) in streams (object) when posting to this room endpoint
-
+  streams[name] = new Sse(); // KEY STEP: each room needs its own stream; this creates a new stream (Sse) in streams (object) once a new room is posted to this endpoint
   res.send(name);
 });
 
@@ -65,13 +72,14 @@ app.get("/message", (req, res, next) => {
   res.send(messages); // since we don't have a database, the messages refresh everytime the server starts
 });
 
-app.post("/message/:room", (req, res, next) => {
+app.post("/message/:roomName", (req, res, next) => {
   const { message } = req.body; // REQUIRES body-parser to use the body
   // gets the message out of the body and gets rid of the body; messages='xxx' in request <- this becomes a property of the request body
+  console.log("message test", message);
   const { roomName } = req.params;
-
+  console.log("roomName test", roomName);
   const room = messages[roomName]; // the roomName property of the messages object, which will return an array
-
+  console.log("room test", room);
   room.push(message);
 
   const stream = streams[roomName];
